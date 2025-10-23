@@ -936,7 +936,7 @@ restore_redis_data() {
     print_message "INFO" "Восстановление Redis данных..."
     
     for redis_dump in "$redis_restore_dir"/redis_dump_*.rdb; do
-        if [[ -f "$redis_dump" && docker ps | grep -q "remnawave-redis" ]]; then
+        if [[ -f "$redis_dump" ]] && docker ps | grep -q "remnawave-redis"; then
             print_message "INFO" "Восстановление Redis дампа..."
             docker cp "$redis_dump" remnawave-redis:/data/dump.rdb
             docker restart remnawave-redis
@@ -957,7 +957,7 @@ restore_nginx_configurations() {
     
     # Restore container nginx config
     for nginx_config in "$nginx_restore_dir"/container_nginx_*; do
-        if [[ -d "$nginx_config" && docker ps | grep -q "remnawave-nginx" ]]; then
+        if [[ -d "$nginx_config" ]] && docker ps | grep -q "remnawave-nginx"; then
             docker cp "$nginx_config/." remnawave-nginx:/etc/nginx/
             break
         fi
