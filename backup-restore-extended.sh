@@ -1808,6 +1808,28 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         "--config"|"-c")
             configure_backup_paths
             ;;
+        "--version"|"-v")
+            echo "Extended Backup для Remnawave"
+            echo "Версия: 3.0.0-extended"
+            echo "Дата: 23 октября 2025"
+            echo "Репозиторий: https://github.com/Safe-Stream/safe_backup-extended"
+            exit 0
+            ;;
+        "--detect-services")
+            detect_remnawave_services
+            exit 0
+            ;;
+        "--test-mode")
+            print_message "INFO" "Тестовый режим активирован"
+            detect_remnawave_services
+            exit 0
+            ;;
+        "--quick-test")
+            print_message "INFO" "Быстрый тест системы..."
+            detect_remnawave_services
+            print_message "SUCCESS" "Система готова к работе!"
+            exit 0
+            ;;
         "--help"|"-h")
             echo "Использование: $0 [ОПЦИЯ]"
             echo ""
@@ -1818,6 +1840,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
             echo "  -r full, --restore full Полное восстановление сервера"
             echo "  -d, --detect          Обнаружить установленные сервисы"
             echo "  -c, --config          Настройка путей для бэкапа"
+            echo "  -v, --version         Показать версию"
+            echo "  --detect-services     Показать обнаруженные сервисы и выйти"
+            echo "  --test-mode          Режим тестирования"
+            echo "  --quick-test         Быстрый тест системы"
             echo "  -h, --help            Показать эту справку"
             echo ""
             echo "Без аргументов запускается интерактивное меню."
