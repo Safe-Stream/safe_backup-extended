@@ -83,8 +83,14 @@ detect_remnawave_services() {
     
     print_message "INFO" "Обнаружение установленных сервисов Remnawave..."
     
+    # Check if Docker is available
+    if ! command -v docker &> /dev/null; then
+        print_message "WARN" "Docker не установлен. Это нормально для нового сервера."
+        return 1
+    fi
+    
     # Get all running containers
-    containers=$(docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}" | grep -E "(remnawave|postgres|valkey|redis|nginx)" || true)
+    containers=$(docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}" 2>/dev/null | grep -E "(remnawave|postgres|valkey|redis|nginx)" || true)
     
     if [[ -z "$containers" ]]; then
         print_message "WARN" "Не найдено запущенных контейнеров Remnawave"
@@ -1429,7 +1435,40 @@ create_minimal_config() {
 
 setup_initial_config() {
     clear
-    echo -e "${GREEN}${BOLD}Первоначальная настройка${RESET}"
+    echo -e "${GREEN}${BOLD}Первоначальная настройка Extended Backup${RESET}"
+    echo ""
+    
+    # Ask about mode first
+    print_message "ACTION" "Выберите режим работы:"
+    echo ""
+    echo " 1. Рабочий сервер (создание бэкапов существующей Remnawave)"
+    echo " 2. Новый сервер (восстановление из бэкапа)"
+    echo ""
+    
+    local mode_choice
+    while true; do
+        read -rp "${GREEN}[?]${RESET} Выберите режим (1-2): " mode_choice
+        case "$mode_choice" in
+            1)
+                print_message "INFO" "Режим: Рабочий сервер - настройка для создания бэкапов"
+                setup_backup_server_config
+                break
+                ;;
+            2)
+                print_message "INFO" "Режим: Новый сервер - настройка для восстановления"
+                setup_restore_server_config
+                break
+                ;;
+            *)
+                print_message "ERROR" "Неверный выбор. Введите 1 или 2."
+                ;;
+        esac
+    done
+}
+
+setup_backup_server_config() {
+    clear
+    echo -e "${GREEN}${BOLD}Настройка рабочего сервера${RESET}"
     echo ""
     
     # Telegram configuration
@@ -1520,6 +1559,85 @@ setup_initial_config() {
     save_config
     
     print_message "SUCCESS" "Первоначальная настройка завершена!"
+    read -rp "Нажмите Enter для продолжения..."
+}
+
+setup_restore_server_config() {
+    clear
+    echo -e "${GREEN}${BOLD}Настройка нового сервера для восстановления${RESET}"
+    echo ""
+    
+    print_message "INFO" "Этот сервер будет использоваться для восстановления Remnawave из бэкапа"
+    print_message "INFO" "Настройка Telegram опциональна - нужна только для уведомлений"
+    echo ""
+    
+    # Optional Telegram configuration
+    read -rp "${GREEN}[?]${RESET} Настроить Telegram уведомления сейчас? (y/N): " setup_tg
+    
+    if [[ "$setup_tg" =~ ^[Yy]$ ]]; then
+        echo ""
+        print_message "ACTION" "Настройка Telegram уведомлений:"
+        echo ""
+        
+        print_message "INFO" "1. Создайте бота в ${CYAN}@BotFather${RESET} и получите Token"
+        read -rp "Введите API Token бота (или оставьте пустым): " BOT_TOKEN
+        
+        if [[ -n "$BOT_TOKEN" ]]; then
+            print_message "INFO" "2. Получите Chat ID у ${CYAN}@username_to_id_bot${RESET}"
+            read -rp "Введите Chat ID: " CHAT_ID
+            
+            read -rp "Message Thread ID (опционально): " TG_MESSAGE_THREAD_ID
+            
+            # Test connection
+            if [[ -n "$CHAT_ID" ]]; then
+                print_message "INFO" "Проверка настроек..."
+                local test_response
+                test_response=$(curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
+                    -d "chat_id=$CHAT_ID" \
+                    -d "text=🔧 Extended Backup готов к восстановлению на новом сервере!")
+                
+                if echo "$test_response" | grep -q '"ok":true'; then
+                    print_message "SUCCESS" "Telegram настроен успешно!"
+                else
+                    print_message "WARN" "Ошибка Telegram. Настройки сохранены, можно изменить позже."
+                fi
+            fi
+        else
+            BOT_TOKEN=""
+            CHAT_ID=""
+            TG_MESSAGE_THREAD_ID=""
+            print_message "INFO" "Telegram пропущен. Можно настроить позже через: rw-backup-extended --config"
+        fi
+    else
+        BOT_TOKEN=""
+        CHAT_ID=""
+        TG_MESSAGE_THREAD_ID=""
+        print_message "INFO" "Telegram пропущен. Можно настроить позже."
+    fi
+    
+    # Set defaults for restore server
+    DB_USER="postgres"
+    UPLOAD_METHOD="telegram"
+    FULL_SERVER_BACKUP="true"
+    BACKUP_DOCKER_VOLUMES="true"
+    DOCKER_COMPOSE_PATHS="/opt/remnawave"
+    NGINX_CONFIG_PATHS="/etc/nginx /opt/nginx"
+    SSL_CERT_PATHS="/etc/letsencrypt /opt/ssl"
+    REMNALABS_ROOT_DIR="/opt/remnawave"
+    CUSTOM_BACKUP_PATHS=""
+    
+    # Save configuration
+    save_config
+    
+    echo ""
+    print_message "SUCCESS" "Сервер восстановления настроен!"
+    print_message "INFO" "Теперь можно загрузить бэкап и выполнить восстановление"
+    echo ""
+    print_message "ACTION" "Следующие шаги:"
+    print_message "INFO" "  1. Загрузите файл бэкапа в /opt/rw-backup-restore/backup/"
+    print_message "INFO" "  2. Запустите: rw-backup-extended"
+    print_message "INFO" "  3. Выберите '2. Полное восстановление сервера'"
+    echo ""
     read -rp "Нажмите Enter для продолжения..."
 }
 
