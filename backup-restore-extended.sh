@@ -1179,12 +1179,20 @@ configure_backup_paths() {
         echo ""
         
         print_message "INFO" "Текущие настройки:"
-        echo "  Полный бэкап сервера: $(if [[ "$FULL_SERVER_BACKUP" == "true" ]]; then echo "${GREEN}ВКЛЮЧЕН${RESET}"; else echo "${RED}ВЫКЛЮЧЕН${RESET}"; fi)"
+        if [[ "$FULL_SERVER_BACKUP" == "true" ]]; then
+            echo "  Полный бэкап сервера: ${GREEN}ВКЛЮЧЕН${RESET}"
+        else
+            echo "  Полный бэкап сервера: ${RED}ВЫКЛЮЧЕН${RESET}"
+        fi
         echo "  Docker Compose пути: ${DOCKER_COMPOSE_PATHS:-"не настроены"}"
         echo "  Nginx конфигурации: ${NGINX_CONFIG_PATHS}"
         echo "  SSL сертификаты: ${SSL_CERT_PATHS}"
         echo "  Дополнительные пути: ${CUSTOM_BACKUP_PATHS:-"не настроены"}"
-        echo "  Бэкап Docker volumes: $(if [[ "$BACKUP_DOCKER_VOLUMES" == "true" ]]; then echo "${GREEN}ВКЛЮЧЕН${RESET}"; else echo "${RED}ВЫКЛЮЧЕН${RESET}"; fi)"
+        if [[ "$BACKUP_DOCKER_VOLUMES" == "true" ]]; then
+            echo "  Бэкап Docker volumes: ${GREEN}ВКЛЮЧЕН${RESET}"
+        else
+            echo "  Бэкап Docker volumes: ${RED}ВЫКЛЮЧЕН${RESET}"
+        fi
         echo ""
         
         echo " 1. Переключить полный бэкап сервера"
