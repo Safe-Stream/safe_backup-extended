@@ -38,6 +38,19 @@ BOT_BACKUP_PATH=""
 BOT_BACKUP_SELECTED=""
 BOT_BACKUP_DB_USER="postgres"
 
+# Universal Docker Compose function
+docker_compose_cmd() {
+    # Try modern 'docker compose' first, fallback to legacy 'docker-compose'
+    if docker compose version &>/dev/null; then
+        docker compose "$@"
+    elif command -v docker-compose &>/dev/null; then
+        docker-compose "$@"
+    else
+        print_message "ERROR" "Ни 'docker compose', ни 'docker-compose' не найдены"
+        return 1
+    fi
+}
+
 if [[ -t 0 ]]; then
     RED=$'\e[31m'
     GREEN=$'\e[32m'
@@ -1065,8 +1078,8 @@ start_all_services() {
         if [[ -f "$compose_dir/docker-compose.yml" ]] || [[ -f "$compose_dir/compose.yml" ]]; then
             print_message "INFO" "Запуск сервисов в: $compose_dir"
             cd "$compose_dir"
-            docker-compose down 2>/dev/null || true
-            docker-compose up -d || {
+            docker_compose_cmd down 2>/dev/null || true
+            docker_compose_cmd up -d || {
                 print_message "WARN" "Не удалось запустить сервисы в: $compose_dir"
             }
         fi
@@ -1776,7 +1789,7 @@ perform_standard_restore() {
     # Stop services
     print_message "INFO" "Остановка сервисов..."
     if [[ -d "$REMNALABS_ROOT_DIR" ]]; then
-        cd "$REMNALABS_ROOT_DIR" 2>/dev/null && docker-compose down 2>/dev/null || true
+        cd "$REMNALABS_ROOT_DIR" 2>/dev/null && docker_compose_cmd down 2>/dev/null || true
     fi
     
     # Restore database
@@ -1803,7 +1816,7 @@ perform_standard_restore() {
     # Start services
     print_message "INFO" "Запуск сервисов..."
     if [[ -d "$REMNALABS_ROOT_DIR" ]]; then
-        cd "$REMNALABS_ROOT_DIR" && docker-compose up -d || {
+        cd "$REMNALABS_ROOT_DIR" && docker_compose_cmd up -d || {
             print_message "WARN" "Не удалось запустить сервисы автоматически"
         }
     fi
