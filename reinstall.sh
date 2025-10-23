@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Быстрая переустановка с исправлениями
-# Версия: 1.0.1
+# Версия: 1.0.2
 
 echo "🔧 Переустановка Extended Backup с исправлениями..."
 
@@ -33,7 +33,17 @@ if curl -fsSL "https://raw.githubusercontent.com/Safe-Stream/safe_backup-extende
         echo "✅ Установка завершена!"
         echo ""
         echo "🎯 Проверка:"
-        rw-backup-extended --version 2>/dev/null && echo "✅ Команда работает" || echo "❌ Команда не работает"
+        if rw-backup-extended --version 2>/dev/null; then
+            echo "✅ Команда --version работает"
+        else
+            echo "❌ Команда --version не работает"
+        fi
+        
+        if rw-backup-extended --detect-services 2>/dev/null; then
+            echo "✅ Команда --detect-services работает"
+        else
+            echo "❌ Команда --detect-services не работает"
+        fi
         
     else
         echo "❌ Ошибки синтаксиса найдены!"
