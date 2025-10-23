@@ -13,7 +13,7 @@ CYAN=$'\e[36m'
 RESET=$'\e[0m'
 BOLD=$'\e[1m'
 
-# Configuration
+# Configuration  
 # По умолчанию используем локальный файл, если URL не указан
 DEFAULT_SCRIPT_URL="https://raw.githubusercontent.com/Safe-Stream/safe_backup-extended/main/backup-restore-extended.sh"
 SCRIPT_URL="${REMOTE_SCRIPT_URL:-$DEFAULT_SCRIPT_URL}"
