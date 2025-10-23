@@ -1329,8 +1329,14 @@ load_or_create_config() {
             save_config
         fi
     else
-        print_message "INFO" "Создание новой конфигурации..."
-        setup_initial_config
+        # Check if this is restore mode - create minimal config
+        if [[ "$1" == "restore" ]]; then
+            print_message "INFO" "Режим восстановления - создание минимальной конфигурации..."
+            create_minimal_config
+        else
+            print_message "INFO" "Создание новой конфигурации..."
+            setup_initial_config
+        fi
     fi
 }
 
@@ -1397,6 +1403,28 @@ import_original_config() {
     save_config
     
     print_message "SUCCESS" "Настройки успешно импортированы и расширены!"
+}
+
+create_minimal_config() {
+    print_message "INFO" "Создание минимальной конфигурации для восстановления..."
+    
+    # Set default values without user interaction
+    BOT_TOKEN=""
+    CHAT_ID=""
+    TG_MESSAGE_THREAD_ID=""
+    DB_USER="postgres"
+    UPLOAD_METHOD="telegram"
+    FULL_SERVER_BACKUP="true"
+    BACKUP_DOCKER_VOLUMES="true"
+    DOCKER_COMPOSE_PATHS="/opt/remnawave"
+    NGINX_CONFIG_PATHS="/etc/nginx /opt/nginx"
+    SSL_CERT_PATHS="/etc/letsencrypt /opt/ssl"
+    REMNALABS_ROOT_DIR="/opt/remnawave"
+    CUSTOM_BACKUP_PATHS=""
+    
+    save_config
+    print_message "SUCCESS" "Минимальная конфигурация создана"
+    print_message "INFO" "Telegram настройки можно будет добавить позже через: rw-backup-extended --config"
 }
 
 setup_initial_config() {
@@ -1782,8 +1810,12 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # Check dependencies
     check_dependencies
     
-    # Load configuration
-    load_or_create_config
+    # Load configuration (pass restore mode if needed)
+    if [[ "${1:-}" == "--restore" || "${1:-}" == "-r" ]]; then
+        load_or_create_config "restore"
+    else
+        load_or_create_config
+    fi
     
     # Handle command line arguments
     case "${1:-}" in
